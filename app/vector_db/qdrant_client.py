@@ -14,6 +14,7 @@ class QdrantDB:
         self.client = QdrantClient(url=self.url)
 
     def connect(self) -> bool:
+        # QdrantClient does not require explicit connection
         self.logger.info("Connected to Qdrant")
         return True
 
@@ -31,6 +32,27 @@ class QdrantDB:
             else:
                 self.logger.error(f"Failed to initialize collection: {str(e)}")
                 raise
+
+    def search(self, vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
+        try:
+            self.logger.info(f"Searching in collection: {self.collection_name}")
+            results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=vector,
+                limit=limit
+            )
+
+            hits = []
+            for hit in results:
+                hits.append({
+                    "id": hit.id,
+                    "score": hit.score,
+                    "payload": hit.payload
+                })
+            return hits
+        except Exception as e:
+            self.logger.error(f"Search failed: {str(e)}")
+            return []
 
     def insert(self, vectors: List[List[float]], metadata: List[Dict[str, Any]]) -> bool:
         try:
